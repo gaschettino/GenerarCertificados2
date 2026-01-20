@@ -53,75 +53,83 @@ if incluye_dni:
 st.divider()
 
 # =========================
-# Formato del nombre
+# Formato del nombre y apellido
 # =========================
-st.subheader("Formato del nombre")
+st.subheader("Formato del nombre y apellido del paciente")
 
-fuentes_disponibles = [
-    "DejaVu Sans",
-    "DejaVu Serif",
-    "Liberation Sans",
-    "Liberation Serif",
-    "Arial",
-    "Times New Roman",
-    "Calibri"
-]
+col_fuente, col_color = st.columns(2)
 
-fuente_seleccionada = st.selectbox(
-    "Tipo de fuente",
-    fuentes_disponibles,
-    index=0
-)
+# ---- Columna izquierda: fuente + tamaño ----
+with col_fuente:
+    fuentes_disponibles = [
+        "DejaVu Sans",
+        "DejaVu Serif",
+        "Liberation Sans",
+        "Liberation Serif",
+        "Arial",
+        "Times New Roman",
+        "Calibri"
+    ]
 
-# =========================
-# Color de la letra
-# =========================
-st.subheader("Color de la letra")
-
-st.markdown(
-    "Elegí un color predefinido o ingresá uno personalizado (RGB o HEX).  \n"
-    "👉 [Ver códigos de color](https://htmlcolorcodes.com/)"
-)
-
-colores_predefinidos = {
-    "Negro": (0, 0, 0),
-    "Azul": (0, 0, 180),
-    "Rojo": (180, 0, 0),
-    "Verde": (0, 140, 0),
-    "Gris": (90, 90, 90)
-}
-
-color_mode = st.radio(
-    "Modo de selección de color",
-    ["predefinido", "rgb", "hex"],
-    horizontal=True
-)
-
-# Default negro
-r, g, b = 0, 0, 0
-
-if color_mode == "predefinido":
-    color_predefinido = st.selectbox(
-        "Color predefinido",
-        list(colores_predefinidos.keys())
+    fuente_seleccionada = st.selectbox(
+        "Tipo de fuente",
+        fuentes_disponibles,
+        index=0
     )
-    r, g, b = colores_predefinidos[color_predefinido]
 
-elif color_mode == "rgb":
-    rgb_input = st.text_input("RGB (ej: 34,139,34)")
-    try:
-        r, g, b = [int(x.strip()) for x in rgb_input.split(",")]
-        if not all(0 <= v <= 255 for v in (r, g, b)):
+    tamaño_fuente = st.slider(
+        "Tamaño de letra",
+        min_value=12,
+        max_value=50,
+        value=25,
+        step=1
+    )
+
+# ---- Columna derecha: color ----
+with col_color:
+    st.markdown(
+        "Color de la letra  \n"
+        "👉 [Ver códigos de color](https://htmlcolorcodes.com/)"
+    )
+
+    colores_predefinidos = {
+        "Negro": (0, 0, 0),
+        "Azul": (0, 0, 180),
+        "Rojo": (180, 0, 0),
+        "Verde": (0, 140, 0),
+        "Gris": (90, 90, 90)
+    }
+
+    color_mode = st.radio(
+        "Modo de selección",
+        ["predefinido", "rgb", "hex"],
+        horizontal=True
+    )
+
+    r, g, b = 0, 0, 0  # negro por default
+
+    if color_mode == "predefinido":
+        color_predefinido = st.selectbox(
+            "Color predefinido",
+            list(colores_predefinidos.keys())
+        )
+        r, g, b = colores_predefinidos[color_predefinido]
+
+    elif color_mode == "rgb":
+        rgb_input = st.text_input("RGB (ej: 34,139,34)")
+        try:
+            r, g, b = [int(x.strip()) for x in rgb_input.split(",")]
+            if not all(0 <= v <= 255 for v in (r, g, b)):
+                r, g, b = 0, 0, 0
+        except:
             r, g, b = 0, 0, 0
-    except:
-        r, g, b = 0, 0, 0
 
-elif color_mode == "hex":
-    hex_input = st.text_input("HEX (ej: #228B22)")
-    if re.match(r"^#([A-Fa-f0-9]{6})$", hex_input):
-        r = int(hex_input[1:3], 16)
-        g = int(hex_input[3:5], 16)
-        b = int(hex_input[5:7], 16)
+    elif color_mode == "hex":
+        hex_input = st.text_input("HEX (ej: #228B22)")
+        if re.match(r"^#([A-Fa-f0-9]{6})$", hex_input):
+            r = int(hex_input[1:3], 16)
+            g = int(hex_input[3:5], 16)
+            b = int(hex_input[5:7], 16)
 
 st.divider()
 
@@ -134,7 +142,7 @@ st.markdown(
     f"""
     <div style="
         font-family: '{fuente_seleccionada}', sans-serif;
-        font-size: 28px;
+        font-size: {tamaño_fuente}px;
         font-weight: bold;
         font-style: italic;
         color: rgb({r},{g},{b});
@@ -217,7 +225,7 @@ if uploaded_template and uploaded_excel:
                                                 row["Nombre y apellido"]
                                             )
                                             run.font.name = fuente_seleccionada
-                                            run.font.size = Pt(25)
+                                            run.font.size = Pt(tamaño_fuente)
                                             run.font.bold = True
                                             run.font.italic = True
                                             run.font.color.rgb = RGBColor(r, g, b)
