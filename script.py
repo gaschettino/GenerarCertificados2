@@ -28,7 +28,63 @@ st.write("Cualquier consulta enviar mail a gaschettino@garrahan.gov.ar")
 # =========================
 # Subida de archivos (2 columnas)
 # =========================
+
 st.subheader("Archivos")
+# =========================
+# Ayuda formatos de archivo
+# =========================
+with st.expander("📘 Ayuda: formato de los archivos requeridos"):
+    st.markdown(
+        """
+### 📄 Template del certificado (.pptx)
+
+El archivo **PPTX** debe cumplir con lo siguiente:
+
+- Puede tener una o varias diapositivas.
+- El texto donde irá el nombre debe contener **exactamente** el texto:
+
+**Nombre y apellido**
+
+- Si el certificado incluye DNI, el template debe contener el texto:
+
+**Numero de DNI**
+
+Ese texto será reemplazado automáticamente por los datos del Excel.
+
+⚠️ No importa la fuente, tamaño o color del texto en el PPTX, ya que serán reemplazados por los valores configurados en la aplicación.
+
+---
+
+### 📊 Listado de asistentes (.xlsx)
+
+El archivo **Excel** debe tener las siguientes columnas:
+
+**Obligatorias**
+- Nombre
+- Apellido
+
+**Opcional**
+- DNI (solo si marcás *"El certificado incluye DNI"*).
+
+Ejemplo de estructura:
+
+Nombre | Apellido | DNI  
+Juan | Pérez | 12345678  
+Ana | Gómez | 23456789  
+
+📌 Los nombres de las columnas no distinguen mayúsculas/minúsculas,  
+pero deben escribirse correctamente.
+
+---
+
+### ✅ Recomendaciones
+
+- No dejar filas vacías.
+- No combinar celdas.
+- Usar valores numéricos simples para el DNI.
+- Guardar el archivo en formato `.xlsx`.
+"""
+    )
 
 col1, col2 = st.columns(2)
 
