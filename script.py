@@ -11,6 +11,13 @@ import shutil
 import re
 
 # =========================
+# Utilidades
+# =========================
+def css_font(f):
+    """Evita problemas de fuentes con espacios en HTML"""
+    return f.replace("'", "").replace('"', "")
+
+# =========================
 # Configuración de la página
 # =========================
 st.set_page_config(page_title="Generador de Certificados", layout="centered")
@@ -63,10 +70,18 @@ fuentes_disponibles = [
     "Calibri"
 ]
 
+colores_predef = {
+    "Negro": (0, 0, 0),
+    "Azul": (0, 0, 180),
+    "Rojo": (180, 0, 0),
+    "Verde": (0, 140, 0),
+    "Gris": (90, 90, 90)
+}
+
 # =========================
-# Formato del Nombre
+# Formato Nombre
 # =========================
-st.subheader("Formato del nombre y apellido del paciente")
+st.subheader("Formato del nombre y apellido")
 
 col_nom_1, col_nom_2 = st.columns(2)
 
@@ -89,7 +104,7 @@ with col_nom_2:
     st.markdown("Color del nombre  \n👉 [Ver códigos](https://htmlcolorcodes.com/)")
 
     modo_color_nombre = st.radio(
-        "Modo de color (Nombre)",
+        "Modo de color",
         ["predefinido", "rgb", "hex"],
         horizontal=True,
         key="color_nombre"
@@ -97,34 +112,26 @@ with col_nom_2:
 
     r_nom, g_nom, b_nom = 0, 0, 0
 
-    colores_predef = {
-        "Negro": (0, 0, 0),
-        "Azul": (0, 0, 180),
-        "Rojo": (180, 0, 0),
-        "Verde": (0, 140, 0),
-        "Gris": (90, 90, 90)
-    }
-
     if modo_color_nombre == "predefinido":
         c = st.selectbox("Color", colores_predef.keys(), key="c_nom")
         r_nom, g_nom, b_nom = colores_predef[c]
 
     elif modo_color_nombre == "rgb":
-        rgb = st.text_input("RGB", key="rgb_nom")
+        rgb = st.text_input("RGB (ej: 0,0,0)", key="rgb_nom")
         try:
             r_nom, g_nom, b_nom = map(int, rgb.split(","))
         except:
             pass
 
     elif modo_color_nombre == "hex":
-        hx = st.text_input("HEX", key="hex_nom")
+        hx = st.text_input("HEX (ej: #000000)", key="hex_nom")
         if re.match(r"^#([A-Fa-f0-9]{6})$", hx):
             r_nom = int(hx[1:3], 16)
             g_nom = int(hx[3:5], 16)
             b_nom = int(hx[5:7], 16)
 
 # =========================
-# Formato del DNI
+# Formato DNI
 # =========================
 if incluye_dni:
     st.divider()
@@ -152,7 +159,7 @@ if incluye_dni:
         st.markdown("Color del DNI")
 
         modo_color_dni = st.radio(
-            "Modo de color (DNI)",
+            "Modo de color",
             ["predefinido", "rgb", "hex"],
             horizontal=True,
             key="color_dni"
@@ -165,14 +172,14 @@ if incluye_dni:
             r_dni, g_dni, b_dni = colores_predef[c]
 
         elif modo_color_dni == "rgb":
-            rgb = st.text_input("RGB", key="rgb_dni")
+            rgb = st.text_input("RGB (ej: 0,0,0)", key="rgb_dni")
             try:
                 r_dni, g_dni, b_dni = map(int, rgb.split(","))
             except:
                 pass
 
         elif modo_color_dni == "hex":
-            hx = st.text_input("HEX", key="hex_dni")
+            hx = st.text_input("HEX (ej: #000000)", key="hex_dni")
             if re.match(r"^#([A-Fa-f0-9]{6})$", hx):
                 r_dni = int(hx[1:3], 16)
                 g_dni = int(hx[3:5], 16)
@@ -187,7 +194,7 @@ st.subheader("Vista previa")
 
 preview_html = f"""
 <div style="
-    font-family:'{fuente_nombre}';
+    font-family:'{css_font(fuente_nombre)}', sans-serif;
     font-size:{tamaño_nombre}px;
     font-weight:bold;
     font-style:italic;
@@ -201,14 +208,13 @@ if incluye_dni:
     preview_html += f"""
     <div style="
         margin-top:6px;
-        font-family:'{fuente_dni}';
+        font-family:'{css_font(fuente_dni)}', sans-serif;
         font-size:{tamaño_dni}px;
         color:rgb({r_dni},{g_dni},{b_dni});
     ">
         DNI 12.345.678
     </div>
     """
-
 
 st.markdown(preview_html, unsafe_allow_html=True)
 
