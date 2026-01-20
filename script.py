@@ -8,14 +8,19 @@ import os
 import tempfile
 import subprocess
 import shutil
+import re
 
-# --- Configuración de la página ---
+# =========================
+# Configuración de la página
+# =========================
 st.set_page_config(page_title="Generador de Certificados", layout="centered")
 
 st.title("Generador de Certificados")
 st.write("Cualquier consulta enviar mail a gaschettino@garrahan.gov.ar")
 
-# --- Subida de archivos ---
+# =========================
+# Subida de archivos
+# =========================
 uploaded_template = st.file_uploader(
     "Subí el template del certificado (.pptx)", type=["pptx"]
 )
@@ -24,17 +29,28 @@ uploaded_excel = st.file_uploader(
     "Tiene que tener dos columnas: 'Nombre' y 'Apellido'"
 )
 
-# ===============================
-# 🎨 FORMATO DEL TEXTO
-# ===============================
+# =========================
+# Estado inicial
+# =========================
+if "color_mode" not in st.session_state:
+    st.session_state.color_mode = "predefinido"
+if "color_predefinido" not in st.session_state:
+    st.session_state.color_predefinido = "Negro"
+if "rgb_input" not in st.session_state:
+    st.session_state.rgb_input = ""
+if "hex_input" not in st.session_state:
+    st.session_state.hex_input = ""
+
+# =========================
+# Opciones de formato
+# =========================
 st.subheader("Formato del nombre")
 
 st.info(
-    "Podés elegir un color predefinido o ingresar un RGB personalizado. "
-    "👉 https://htmlcolorcodes.com/"
+    "Las fuentes disponibles dependen del servidor donde corre la aplicación. "
+    "Si una fuente no está instalada, se usará una alternativa automáticamente."
 )
 
-# --- Fuentes seguras ---
 fuentes_disponibles = [
     "DejaVu Sans",
     "DejaVu Serif",
@@ -48,67 +64,99 @@ fuente_seleccionada = st.selectbox(
     index=0
 )
 
-# --- Colores predefinidos ---
-colores_disponibles = {
-    "Negro (default)": RGBColor(0, 0, 0),
-    "Azul": RGBColor(0, 0, 180),
-    "Rojo": RGBColor(180, 0, 0),
-    "Verde": RGBColor(0, 140, 0),
-    "Gris": RGBColor(90, 90, 90)
-}
+# =========================
+# Color de la letra
+# =========================
+st.subheader("Color de la letra")
 
-color_predefinido = st.selectbox(
-    "Color predefinido",
-    list(colores_disponibles.keys()),
-    index=0  # Negro por default
+st.markdown(
+    "Elegí un color predefinido o ingresá uno personalizado (RGB o HEX).  \n"
+    "👉 [Ver códigos de color](https://htmlcolorcodes.com/)"
 )
 
-usar_rgb_personalizado = st.checkbox("Usar RGB personalizado")
+# --- Colores predefinidos ---
+colores_predefinidos = {
+    "Negro": (0, 0, 0),
+    "Azul": (0, 0, 180),
+    "Rojo": (180, 0, 0),
+    "Verde": (0, 140, 0),
+    "Gris": (90, 90, 90)
+}
 
-rgb_personalizado = None
+color_mode = st.radio(
+    "Modo de selección de color",
+    ["predefinido", "rgb", "hex"],
+    horizontal=True,
+    index=["predefinido", "rgb", "hex"].index(st.session_state.color_mode)
+)
 
-if usar_rgb_personalizado:
+st.session_state.color_mode = color_mode
+
+# --- Inicializar RGB final ---
+r, g, b = 0, 0, 0  # default NEGRO
+
+# --- Modo predefinido ---
+if color_mode == "predefinido":
+    color_predefinido = st.selectbox(
+        "Color predefinido",
+        list(colores_predefinidos.keys()),
+        index=list(colores_predefinidos.keys()).index(
+            st.session_state.color_predefinido
+        )
+    )
+    st.session_state.color_predefinido = color_predefinido
+    r, g, b = colores_predefinidos[color_predefinido]
+
+# --- Modo RGB ---
+elif color_mode == "rgb":
     rgb_input = st.text_input(
-        "Ingresá el RGB (ej: 34,139,34)",
+        "Ingresá RGB (ej: 34,139,34)",
+        value=st.session_state.rgb_input,
         placeholder="R,G,B"
     )
+    st.session_state.rgb_input = rgb_input
 
-    if rgb_input:
-        try:
-            r, g, b = [int(x.strip()) for x in rgb_input.split(",")]
-            if all(0 <= v <= 255 for v in (r, g, b)):
-                rgb_personalizado = RGBColor(r, g, b)
-            else:
-                st.warning("Los valores RGB deben estar entre 0 y 255.")
-        except:
+    try:
+        r, g, b = [int(x.strip()) for x in rgb_input.split(",")]
+        if not all(0 <= v <= 255 for v in (r, g, b)):
+            st.warning("Los valores RGB deben estar entre 0 y 255.")
+            r, g, b = 0, 0, 0
+    except:
+        if rgb_input:
             st.warning("Formato inválido. Usá: R,G,B (ej: 255,0,0)")
+        r, g, b = 0, 0, 0
 
-# --- Color final ---
-color_seleccionado = rgb_personalizado or colores_disponibles[color_predefinido]
+# --- Modo HEX ---
+elif color_mode == "hex":
+    hex_input = st.text_input(
+        "Ingresá HEX (ej: #228B22)",
+        value=st.session_state.hex_input,
+        placeholder="#RRGGBB"
+    )
+    st.session_state.hex_input = hex_input
+
+    if re.match(r"^#([A-Fa-f0-9]{6})$", hex_input):
+        r = int(hex_input[1:3], 16)
+        g = int(hex_input[3:5], 16)
+        b = int(hex_input[5:7], 16)
+    else:
+        if hex_input:
+            st.warning("Formato HEX inválido. Usá: #RRGGBB")
+        r, g, b = 0, 0, 0
 
 # --- Preview del color ---
 st.markdown(
-    f"""
-    <div style="
-        width:80px;
-        height:25px;
-        border:1px solid #000;
-        background-color: rgb(
-            {color_seleccionado.rgb[0]},
-            {color_seleccionado.rgb[1]},
-            {color_seleccionado.rgb[2]}
-        );
-    "></div>
-    """,
+    f"<div style='width:120px;height:30px;border:1px solid #000;"
+    f"background-color:rgb({r},{g},{b});'></div>",
     unsafe_allow_html=True
 )
 
-# ===============================
-# 📄 CONVERSIÓN A PDF
-# ===============================
+# =========================
+# Función PPTX → PDF
+# =========================
 def convert_to_pdf(input_pptx, output_dir):
     try:
-        result = subprocess.run(
+        subprocess.run(
             [
                 "libreoffice",
                 "--headless",
@@ -120,47 +168,38 @@ def convert_to_pdf(input_pptx, output_dir):
             capture_output=True,
             text=True
         )
-
-        if result.returncode == 0:
-            os.remove(input_pptx)
-            return True
-        return False
+        os.remove(input_pptx)
+        return True
     except Exception as e:
         print(f"Error al convertir {input_pptx}: {e}")
         return False
 
-# ===============================
-# 🚀 PROCESAMIENTO
-# ===============================
+# =========================
+# Procesamiento
+# =========================
 if uploaded_template and uploaded_excel:
     if st.button("🚀 Generar certificados"):
         with st.spinner("Generando certificados..."):
             with tempfile.TemporaryDirectory() as tmpdir:
 
-                # Guardar template
                 template_path = os.path.join(tmpdir, "template.pptx")
                 with open(template_path, "wb") as f:
                     f.write(uploaded_template.read())
 
-                # Leer Excel
                 df = pd.read_excel(uploaded_excel)
                 df.columns = df.columns.str.strip().str.title()
 
                 if "Apellido" in df.columns and "Nombre" in df.columns:
                     df["Nombre y apellido"] = (
-                        df["Apellido"].astype(str).str.strip()
-                        + " "
-                        + df["Nombre"].astype(str).str.strip()
+                        df["Apellido"].astype(str).str.strip() + " " +
+                        df["Nombre"].astype(str).str.strip()
                     ).str.title()
                 elif "Nombre Y Apellido" in df.columns:
                     df["Nombre y apellido"] = (
                         df["Nombre Y Apellido"].astype(str).str.title()
                     )
                 else:
-                    st.error(
-                        "No se encontró una columna válida "
-                        "(Apellido/Nombre o Nombre y Apellido)."
-                    )
+                    st.error("No se encontró columna de nombre válida.")
                     st.stop()
 
                 if "Asistió" in df.columns:
@@ -172,13 +211,11 @@ if uploaded_template and uploaded_excel:
                 nombres = df["Nombre y apellido"].dropna().unique()
                 total = len(nombres)
 
-                progress_bar = st.progress(0)
-                status_text = st.empty()
+                progress = st.progress(0)
+                status = st.empty()
 
                 for i, nombre in enumerate(nombres):
-                    status_text.text(
-                        f"Procesando: {nombre} ({i+1}/{total})"
-                    )
+                    status.text(f"Procesando: {nombre} ({i+1}/{total})")
 
                     prs = Presentation(template_path)
 
@@ -195,8 +232,7 @@ if uploaded_template and uploaded_excel:
                                             run.font.size = Pt(25)
                                             run.font.bold = True
                                             run.font.italic = True
-                                            run.font.color.rgb = color_seleccionado
-
+                                            run.font.color.rgb = RGBColor(r, g, b)
                                     paragraph.alignment = PP_ALIGN.CENTER
 
                     safe_name = "".join(
@@ -205,22 +241,15 @@ if uploaded_template and uploaded_excel:
                     ).rstrip().replace(" ", "_")
 
                     output_pptx = os.path.join(
-                        output_dir,
-                        f"Certificado_{safe_name}.pptx"
+                        output_dir, f"Certificado_{safe_name}.pptx"
                     )
 
                     prs.save(output_pptx)
                     convert_to_pdf(output_pptx, output_dir)
 
-                    progress_bar.progress((i + 1) / total)
+                    progress.progress((i + 1) / total)
 
-                status_text.text("Procesamiento completado")
-
-                pdf_count = len(
-                    [f for f in os.listdir(output_dir) if f.endswith(".pdf")]
-                )
-
-                st.success(f"Se generaron {pdf_count} certificados PDF.")
+                status.text("Procesamiento completado")
 
                 zip_path = os.path.join(tmpdir, "certificados.zip")
                 shutil.make_archive(
