@@ -27,14 +27,12 @@ col1, col2 = st.columns(2)
 
 with col1:
     uploaded_template = st.file_uploader(
-        "Template del certificado (.pptx)",
-        type=["pptx"]
+        "Template del certificado (.pptx)", type=["pptx"]
     )
 
 with col2:
     uploaded_excel = st.file_uploader(
-        "Listado de asistentes (.xlsx)",
-        type=["xlsx"]
+        "Listado de asistentes (.xlsx)", type=["xlsx"]
     )
 
 # =========================
@@ -46,53 +44,60 @@ incluye_dni = st.checkbox("El certificado incluye DNI")
 
 if incluye_dni:
     st.info(
-        "El Excel debe contener una columna llamada 'DNI' "
+        "El Excel debe tener una columna 'DNI' "
         "y el template debe incluir el texto 'Numero de DNI'."
     )
 
 st.divider()
 
 # =========================
-# Formato del nombre y apellido
+# Fuentes disponibles
+# =========================
+fuentes_disponibles = [
+    "DejaVu Sans",
+    "DejaVu Serif",
+    "Liberation Sans",
+    "Liberation Serif",
+    "Arial",
+    "Times New Roman",
+    "Calibri"
+]
+
+# =========================
+# Formato del Nombre
 # =========================
 st.subheader("Formato del nombre y apellido del paciente")
 
-col_fuente, col_color = st.columns(2)
+col_nom_1, col_nom_2 = st.columns(2)
 
-# ---- Columna izquierda: fuente + tamaño ----
-with col_fuente:
-    fuentes_disponibles = [
-        "DejaVu Sans",
-        "DejaVu Serif",
-        "Liberation Sans",
-        "Liberation Serif",
-        "Arial",
-        "Times New Roman",
-        "Calibri"
-    ]
-
-    fuente_seleccionada = st.selectbox(
-        "Tipo de fuente",
+with col_nom_1:
+    fuente_nombre = st.selectbox(
+        "Fuente (Nombre)",
         fuentes_disponibles,
         index=0
     )
 
-    tamaño_fuente = st.slider(
-        "Tamaño de letra",
-        min_value=12,
-        max_value=50,
+    tamaño_nombre = st.number_input(
+        "Tamaño de letra (Nombre)",
+        min_value=8,
+        max_value=60,
         value=25,
         step=1
     )
 
-# ---- Columna derecha: color ----
-with col_color:
-    st.markdown(
-        "Color de la letra  \n"
-        "👉 [Ver códigos de color](https://htmlcolorcodes.com/)"
+with col_nom_2:
+    st.markdown("Color del nombre  \n👉 [Ver códigos](https://htmlcolorcodes.com/)")
+
+    modo_color_nombre = st.radio(
+        "Modo de color (Nombre)",
+        ["predefinido", "rgb", "hex"],
+        horizontal=True,
+        key="color_nombre"
     )
 
-    colores_predefinidos = {
+    r_nom, g_nom, b_nom = 0, 0, 0
+
+    colores_predef = {
         "Negro": (0, 0, 0),
         "Azul": (0, 0, 180),
         "Rojo": (180, 0, 0),
@@ -100,36 +105,78 @@ with col_color:
         "Gris": (90, 90, 90)
     }
 
-    color_mode = st.radio(
-        "Modo de selección",
-        ["predefinido", "rgb", "hex"],
-        horizontal=True
-    )
+    if modo_color_nombre == "predefinido":
+        c = st.selectbox("Color", colores_predef.keys(), key="c_nom")
+        r_nom, g_nom, b_nom = colores_predef[c]
 
-    r, g, b = 0, 0, 0  # negro por default
-
-    if color_mode == "predefinido":
-        color_predefinido = st.selectbox(
-            "Color predefinido",
-            list(colores_predefinidos.keys())
-        )
-        r, g, b = colores_predefinidos[color_predefinido]
-
-    elif color_mode == "rgb":
-        rgb_input = st.text_input("RGB (ej: 34,139,34)")
+    elif modo_color_nombre == "rgb":
+        rgb = st.text_input("RGB", key="rgb_nom")
         try:
-            r, g, b = [int(x.strip()) for x in rgb_input.split(",")]
-            if not all(0 <= v <= 255 for v in (r, g, b)):
-                r, g, b = 0, 0, 0
+            r_nom, g_nom, b_nom = map(int, rgb.split(","))
         except:
-            r, g, b = 0, 0, 0
+            pass
 
-    elif color_mode == "hex":
-        hex_input = st.text_input("HEX (ej: #228B22)")
-        if re.match(r"^#([A-Fa-f0-9]{6})$", hex_input):
-            r = int(hex_input[1:3], 16)
-            g = int(hex_input[3:5], 16)
-            b = int(hex_input[5:7], 16)
+    elif modo_color_nombre == "hex":
+        hx = st.text_input("HEX", key="hex_nom")
+        if re.match(r"^#([A-Fa-f0-9]{6})$", hx):
+            r_nom = int(hx[1:3], 16)
+            g_nom = int(hx[3:5], 16)
+            b_nom = int(hx[5:7], 16)
+
+# =========================
+# Formato del DNI
+# =========================
+if incluye_dni:
+    st.divider()
+    st.subheader("Formato del DNI")
+
+    col_dni_1, col_dni_2 = st.columns(2)
+
+    with col_dni_1:
+        fuente_dni = st.selectbox(
+            "Fuente (DNI)",
+            fuentes_disponibles,
+            index=0,
+            key="fuente_dni"
+        )
+
+        tamaño_dni = st.number_input(
+            "Tamaño de letra (DNI)",
+            min_value=8,
+            max_value=40,
+            value=14,
+            step=1
+        )
+
+    with col_dni_2:
+        st.markdown("Color del DNI")
+
+        modo_color_dni = st.radio(
+            "Modo de color (DNI)",
+            ["predefinido", "rgb", "hex"],
+            horizontal=True,
+            key="color_dni"
+        )
+
+        r_dni, g_dni, b_dni = 0, 0, 0
+
+        if modo_color_dni == "predefinido":
+            c = st.selectbox("Color", colores_predef.keys(), key="c_dni")
+            r_dni, g_dni, b_dni = colores_predef[c]
+
+        elif modo_color_dni == "rgb":
+            rgb = st.text_input("RGB", key="rgb_dni")
+            try:
+                r_dni, g_dni, b_dni = map(int, rgb.split(","))
+            except:
+                pass
+
+        elif modo_color_dni == "hex":
+            hx = st.text_input("HEX", key="hex_dni")
+            if re.match(r"^#([A-Fa-f0-9]{6})$", hx):
+                r_dni = int(hx[1:3], 16)
+                g_dni = int(hx[3:5], 16)
+                b_dni = int(hx[5:7], 16)
 
 st.divider()
 
@@ -138,23 +185,31 @@ st.divider()
 # =========================
 st.subheader("Vista previa")
 
-st.markdown(
-    f"""
+preview_html = f"""
+<div style="
+    font-family:'{fuente_nombre}';
+    font-size:{tamaño_nombre}px;
+    font-weight:bold;
+    font-style:italic;
+    color:rgb({r_nom},{g_nom},{b_nom});
+">
+    Nombre y Apellido
+</div>
+"""
+
+if incluye_dni:
+    preview_html += f"""
     <div style="
-        font-family: '{fuente_seleccionada}', sans-serif;
-        font-size: {tamaño_fuente}px;
-        font-weight: bold;
-        font-style: italic;
-        color: rgb({r},{g},{b});
-        border: 1px dashed #999;
-        padding: 12px;
-        width: fit-content;
+        margin-top:6px;
+        font-family:'{fuente_dni}';
+        font-size:{tamaño_dni}px;
+        color:rgb({r_dni},{g_dni},{b_dni});
     ">
-        Nombre y Apellido
+        DNI 12.345.678
     </div>
-    """,
-    unsafe_allow_html=True
-)
+    """
+
+st.markdown(preview_html, unsafe_allow_html=True)
 
 st.caption(
     "La vista previa es orientativa. "
@@ -168,13 +223,7 @@ st.divider()
 # =========================
 def convert_to_pdf(input_pptx, output_dir):
     subprocess.run(
-        [
-            "libreoffice",
-            "--headless",
-            "--convert-to", "pdf",
-            "--outdir", output_dir,
-            input_pptx
-        ],
+        ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", output_dir, input_pptx],
         check=True
     )
     os.remove(input_pptx)
@@ -195,20 +244,19 @@ if uploaded_template and uploaded_excel:
                 df.columns = df.columns.str.strip().str.title()
 
                 if "Nombre" not in df.columns or "Apellido" not in df.columns:
-                    st.error("El Excel debe tener columnas 'Nombre' y 'Apellido'.")
+                    st.error("El Excel debe tener columnas Nombre y Apellido.")
                     st.stop()
 
                 if incluye_dni and "Dni" not in df.columns:
-                    st.error("Marcaste que incluye DNI pero no existe la columna 'DNI'.")
+                    st.error("Marcaste DNI pero falta la columna DNI.")
                     st.stop()
 
                 df["Nombre y apellido"] = (
-                    df["Apellido"].astype(str).str.strip() + " " +
-                    df["Nombre"].astype(str).str.strip()
+                    df["Apellido"].astype(str) + " " + df["Nombre"].astype(str)
                 ).str.title()
 
-                output_dir = os.path.join(tmpdir, "Certificados")
-                os.makedirs(output_dir, exist_ok=True)
+                out = os.path.join(tmpdir, "Certificados")
+                os.makedirs(out, exist_ok=True)
 
                 for _, row in df.iterrows():
                     prs = Presentation(template_path)
@@ -216,42 +264,31 @@ if uploaded_template and uploaded_excel:
                     for slide in prs.slides:
                         for shape in slide.shapes:
                             if shape.has_text_frame:
-                                for paragraph in shape.text_frame.paragraphs:
-                                    for run in paragraph.runs:
-
+                                for p in shape.text_frame.paragraphs:
+                                    for run in p.runs:
                                         if "Nombre y apellido" in run.text:
-                                            run.text = run.text.replace(
-                                                "Nombre y apellido",
-                                                row["Nombre y apellido"]
-                                            )
-                                            run.font.name = fuente_seleccionada
-                                            run.font.size = Pt(tamaño_fuente)
+                                            run.text = row["Nombre y apellido"]
+                                            run.font.name = fuente_nombre
+                                            run.font.size = Pt(tamaño_nombre)
                                             run.font.bold = True
                                             run.font.italic = True
-                                            run.font.color.rgb = RGBColor(r, g, b)
+                                            run.font.color.rgb = RGBColor(r_nom, g_nom, b_nom)
 
                                         if incluye_dni and "Numero de DNI" in run.text:
-                                            run.text = run.text.replace(
-                                                "Numero de DNI",
-                                                str(row["Dni"])
-                                            )
+                                            run.text = str(row["Dni"])
+                                            run.font.name = fuente_dni
+                                            run.font.size = Pt(tamaño_dni)
+                                            run.font.color.rgb = RGBColor(r_dni, g_dni, b_dni)
 
-                                    paragraph.alignment = PP_ALIGN.CENTER
+                                    p.alignment = PP_ALIGN.CENTER
 
-                    safe_name = row["Nombre y apellido"].replace(" ", "_")
-                    pptx_path = os.path.join(
-                        output_dir, f"Certificado_{safe_name}.pptx"
-                    )
-
-                    prs.save(pptx_path)
-                    convert_to_pdf(pptx_path, output_dir)
+                    fname = row["Nombre y apellido"].replace(" ", "_")
+                    pptx = os.path.join(out, f"Certificado_{fname}.pptx")
+                    prs.save(pptx)
+                    convert_to_pdf(pptx, out)
 
                 zip_path = os.path.join(tmpdir, "certificados.zip")
-                shutil.make_archive(
-                    zip_path.replace(".zip", ""),
-                    "zip",
-                    output_dir
-                )
+                shutil.make_archive(zip_path.replace(".zip", ""), "zip", out)
 
                 with open(zip_path, "rb") as f:
                     st.download_button(
