@@ -55,14 +55,43 @@ fuentes_disponibles = [
     "DejaVu Sans",
     "DejaVu Serif",
     "Liberation Sans",
-    "Liberation Serif"
+    "Liberation Serif",
+    "Arial",
+    "Times New Roman",
+    "Calibri"
 ]
+
 
 fuente_seleccionada = st.selectbox(
     "Tipo de fuente",
     fuentes_disponibles,
     index=0
 )
+st.subheader("Vista previa del nombre")
+
+st.markdown(
+    f"""
+    <div style="
+        font-family: '{fuente_seleccionada}', sans-serif;
+        font-size: 28px;
+        font-weight: bold;
+        font-style: italic;
+        color: rgb({r},{g},{b});
+        border: 1px dashed #999;
+        padding: 12px;
+        width: fit-content;
+    ">
+        Nombre y Apellido
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.caption(
+    "La vista previa es orientativa. "
+    "El PDF final usa las fuentes disponibles en el servidor."
+)
+
 
 # =========================
 # Color de la letra
