@@ -45,8 +45,6 @@ with col2:
 # =========================
 # DNI
 # =========================
-st.subheader("Contenido del certificado")
-
 incluye_dni = st.checkbox("El certificado incluye DNI")
 
 if incluye_dni:
