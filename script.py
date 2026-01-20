@@ -19,24 +19,41 @@ st.title("Generador de Certificados")
 st.write("Cualquier consulta enviar mail a gaschettino@garrahan.gov.ar")
 
 # =========================
-# Subida de archivos
+# Subida de archivos (2 columnas)
 # =========================
-uploaded_template = st.file_uploader(
-    "Subí el template del certificado (.pptx)", type=["pptx"]
-)
-uploaded_excel = st.file_uploader(
-    "Subí el listado de asistentes (.xlsx). "
-    "Debe tener columnas: Nombre, Apellido (y DNI si corresponde)"
-)
+st.subheader("Archivos")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    uploaded_template = st.file_uploader(
+        "Template del certificado (.pptx)",
+        type=["pptx"]
+    )
+
+with col2:
+    uploaded_excel = st.file_uploader(
+        "Listado de asistentes (.xlsx)",
+        type=["xlsx"]
+    )
 
 # =========================
-# Estado inicial
+# DNI
 # =========================
-if "color_mode" not in st.session_state:
-    st.session_state.color_mode = "predefinido"
+st.subheader("Contenido del certificado")
+
+incluye_dni = st.checkbox("El certificado incluye DNI")
+
+if incluye_dni:
+    st.info(
+        "El Excel debe contener una columna llamada 'DNI' "
+        "y el template debe incluir el texto 'Numero de DNI'."
+    )
+
+st.divider()
 
 # =========================
-# Opciones de formato
+# Formato del nombre
 # =========================
 st.subheader("Formato del nombre")
 
@@ -55,19 +72,6 @@ fuente_seleccionada = st.selectbox(
     fuentes_disponibles,
     index=0
 )
-
-# =========================
-# DNI
-# =========================
-st.subheader("Datos adicionales")
-
-incluye_dni = st.checkbox("El certificado incluye DNI")
-
-if incluye_dni:
-    st.info(
-        "El Excel debe contener una columna llamada 'DNI' "
-        "y el template debe incluir el texto 'Numero de DNI'."
-    )
 
 # =========================
 # Color de la letra
@@ -93,7 +97,8 @@ color_mode = st.radio(
     horizontal=True
 )
 
-r, g, b = 0, 0, 0  # default negro
+# Default negro
+r, g, b = 0, 0, 0
 
 if color_mode == "predefinido":
     color_predefinido = st.selectbox(
@@ -117,6 +122,8 @@ elif color_mode == "hex":
         r = int(hex_input[1:3], 16)
         g = int(hex_input[3:5], 16)
         b = int(hex_input[5:7], 16)
+
+st.divider()
 
 # =========================
 # Vista previa
@@ -146,8 +153,10 @@ st.caption(
     "El PDF final usa las fuentes disponibles en el servidor."
 )
 
+st.divider()
+
 # =========================
-# Conversión a PDF
+# Conversión PPTX → PDF
 # =========================
 def convert_to_pdf(input_pptx, output_dir):
     subprocess.run(
@@ -178,11 +187,11 @@ if uploaded_template and uploaded_excel:
                 df.columns = df.columns.str.strip().str.title()
 
                 if "Nombre" not in df.columns or "Apellido" not in df.columns:
-                    st.error("El Excel debe tener columnas Nombre y Apellido.")
+                    st.error("El Excel debe tener columnas 'Nombre' y 'Apellido'.")
                     st.stop()
 
                 if incluye_dni and "Dni" not in df.columns:
-                    st.error("Marcaste que incluye DNI pero no existe la columna DNI.")
+                    st.error("Marcaste que incluye DNI pero no existe la columna 'DNI'.")
                     st.stop()
 
                 df["Nombre y apellido"] = (
@@ -201,6 +210,7 @@ if uploaded_template and uploaded_excel:
                             if shape.has_text_frame:
                                 for paragraph in shape.text_frame.paragraphs:
                                     for run in paragraph.runs:
+
                                         if "Nombre y apellido" in run.text:
                                             run.text = run.text.replace(
                                                 "Nombre y apellido",
