@@ -101,7 +101,7 @@ with col_nom_1:
     )
 
 with col_nom_2:
-    st.markdown("Color del nombre  \n👉 [Ver códigos](https://htmlcolorcodes.com/)")
+    st.markdown("Color del nombre  \n [Ver códigos](https://htmlcolorcodes.com/)")
 
     modo_color_nombre = st.radio(
         "Modo de color",
