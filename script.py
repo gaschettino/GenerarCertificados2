@@ -47,10 +47,11 @@ if "hex_input" not in st.session_state:
 st.subheader("Formato del nombre")
 
 st.info(
-    "Las fuentes disponibles dependen del servidor donde corre la aplicación. "
-    "Si una fuente no está instalada, se usará una alternativa automáticamente."
+    "La vista previa es orientativa. "
+    "El PDF final usa las fuentes disponibles en el servidor."
 )
 
+# --- Fuentes disponibles ---
 fuentes_disponibles = [
     "DejaVu Sans",
     "DejaVu Serif",
@@ -61,37 +62,11 @@ fuentes_disponibles = [
     "Calibri"
 ]
 
-
 fuente_seleccionada = st.selectbox(
     "Tipo de fuente",
     fuentes_disponibles,
     index=0
 )
-st.subheader("Vista previa del nombre")
-
-st.markdown(
-    f"""
-    <div style="
-        font-family: '{fuente_seleccionada}', sans-serif;
-        font-size: 28px;
-        font-weight: bold;
-        font-style: italic;
-        color: rgb({r},{g},{b});
-        border: 1px dashed #999;
-        padding: 12px;
-        width: fit-content;
-    ">
-        Nombre y Apellido
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.caption(
-    "La vista previa es orientativa. "
-    "El PDF final usa las fuentes disponibles en el servidor."
-)
-
 
 # =========================
 # Color de la letra
@@ -121,10 +96,10 @@ color_mode = st.radio(
 
 st.session_state.color_mode = color_mode
 
-# --- Inicializar RGB final ---
-r, g, b = 0, 0, 0  # default NEGRO
+# --- Color final (default NEGRO) ---
+r, g, b = 0, 0, 0
 
-# --- Modo predefinido ---
+# --- Predefinido ---
 if color_mode == "predefinido":
     color_predefinido = st.selectbox(
         "Color predefinido",
@@ -136,7 +111,7 @@ if color_mode == "predefinido":
     st.session_state.color_predefinido = color_predefinido
     r, g, b = colores_predefinidos[color_predefinido]
 
-# --- Modo RGB ---
+# --- RGB ---
 elif color_mode == "rgb":
     rgb_input = st.text_input(
         "Ingresá RGB (ej: 34,139,34)",
@@ -155,7 +130,7 @@ elif color_mode == "rgb":
             st.warning("Formato inválido. Usá: R,G,B (ej: 255,0,0)")
         r, g, b = 0, 0, 0
 
-# --- Modo HEX ---
+# --- HEX ---
 elif color_mode == "hex":
     hex_input = st.text_input(
         "Ingresá HEX (ej: #228B22)",
@@ -173,10 +148,26 @@ elif color_mode == "hex":
             st.warning("Formato HEX inválido. Usá: #RRGGBB")
         r, g, b = 0, 0, 0
 
-# --- Preview del color ---
+# =========================
+# Vista previa (YA con r,g,b definidos)
+# =========================
+st.subheader("Vista previa")
+
 st.markdown(
-    f"<div style='width:120px;height:30px;border:1px solid #000;"
-    f"background-color:rgb({r},{g},{b});'></div>",
+    f"""
+    <div style="
+        font-family: '{fuente_seleccionada}', sans-serif;
+        font-size: 28px;
+        font-weight: bold;
+        font-style: italic;
+        color: rgb({r},{g},{b});
+        border: 1px dashed #999;
+        padding: 12px;
+        width: fit-content;
+    ">
+        Nombre y Apellido
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
@@ -277,8 +268,6 @@ if uploaded_template and uploaded_excel:
                     convert_to_pdf(output_pptx, output_dir)
 
                     progress.progress((i + 1) / total)
-
-                status.text("Procesamiento completado")
 
                 zip_path = os.path.join(tmpdir, "certificados.zip")
                 shutil.make_archive(
