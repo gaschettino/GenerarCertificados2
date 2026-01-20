@@ -8,6 +8,7 @@ import os
 import tempfile
 import subprocess
 import shutil
+import re
 
 # --- Configuración de la página ---
 st.set_page_config(page_title="Generador de Certificados", layout="centered")
@@ -24,6 +25,19 @@ uploaded_excel = st.file_uploader(
     "Tiene que tener dos columnas: 'Nombre' y 'Apellido'"
 )
 
+# --- Inicializar session_state ---
+if "color_mode" not in st.session_state:
+    st.session_state.color_mode = "predefinido"
+
+if "color_predefinido" not in st.session_state:
+    st.session_state.color_predefinido = "Negro"
+
+if "rgb_input" not in st.session_state:
+    st.session_state.rgb_input = ""
+
+if "hex_input" not in st.session_state:
+    st.session_state.hex_input = ""
+
 # --- Opciones de formato ---
 st.subheader("Formato del nombre")
 
@@ -32,6 +46,7 @@ st.info(
     "Si una fuente no está instalada, se usará una alternativa automáticamente."
 )
 
+# --- Fuentes seguras ---
 fuentes_disponibles = [
     "DejaVu Sans",
     "DejaVu Serif",
@@ -45,6 +60,14 @@ fuente_seleccionada = st.selectbox(
     index=0
 )
 
+# --- Colores ---
+st.subheader("Color de la letra")
+
+st.markdown(
+    "Podés elegir un color predefinido o ingresar un color personalizado (RGB o HEX).  \n"
+    "👉 [Ver códigos de color](https://htmlcolorcodes.com/)"
+)
+
 colores_disponibles = {
     "Negro": RGBColor(0, 0, 0),
     "Azul": RGBColor(0, 0, 180),
@@ -53,12 +76,83 @@ colores_disponibles = {
     "Gris": RGBColor(90, 90, 90)
 }
 
-color_nombre = st.selectbox(
-    "Color de la letra",
-    list(colores_disponibles.keys())
+# --- Selector de modo ---
+color_mode = st.radio(
+    "Modo de selección de color",
+    ["predefinido", "rgb", "hex"],
+    index=["predefinido", "rgb", "hex"].index(st.session_state.color_mode),
+    horizontal=True
 )
 
-color_seleccionado = colores_disponibles[color_nombre]
+st.session_state.color_mode = color_mode
+
+rgb_personalizado = None
+hex_personalizado = None
+
+# --- Predefinido ---
+if color_mode == "predefinido":
+    color_predefinido = st.selectbox(
+        "Color predefinido",
+        list(colores_disponibles.keys()),
+        index=list(colores_disponibles.keys()).index(st.session_state.color_predefinido)
+    )
+    st.session_state.color_predefinido = color_predefinido
+
+# --- RGB ---
+if color_mode == "rgb":
+    rgb_input = st.text_input(
+        "Ingresá RGB (ej: 34,139,34)",
+        value=st.session_state.rgb_input,
+        placeholder="R,G,B"
+    )
+    st.session_state.rgb_input = rgb_input
+
+    try:
+        r, g, b = [int(x.strip()) for x in rgb_input.split(",")]
+        if all(0 <= v <= 255 for v in (r, g, b)):
+            rgb_personalizado = RGBColor(r, g, b)
+        else:
+            st.warning("Los valores RGB deben estar entre 0 y 255.")
+    except:
+        if rgb_input:
+            st.warning("Formato inválido. Usá: R,G,B (ej: 255,0,0)")
+
+# --- HEX ---
+if color_mode == "hex":
+    hex_input = st.text_input(
+        "Ingresá HEX (ej: #228B22)",
+        value=st.session_state.hex_input,
+        placeholder="#RRGGBB"
+    )
+    st.session_state.hex_input = hex_input
+
+    if re.match(r"^#([A-Fa-f0-9]{6})$", hex_input):
+        r = int(hex_input[1:3], 16)
+        g = int(hex_input[3:5], 16)
+        b = int(hex_input[5:7], 16)
+        hex_personalizado = RGBColor(r, g, b)
+    else:
+        if hex_input:
+            st.warning("Formato HEX inválido. Usá: #RRGGBB")
+
+# --- Color final ---
+if color_mode == "predefinido":
+    color_seleccionado = colores_disponibles[st.session_state.color_predefinido]
+elif color_mode == "rgb":
+    color_seleccionado = rgb_personalizado or RGBColor(0, 0, 0)
+elif color_mode == "hex":
+    color_seleccionado = hex_personalizado or RGBColor(0, 0, 0)
+else:
+    color_seleccionado = RGBColor(0, 0, 0)
+
+# --- Preview del color ---
+st.markdown(
+    f"<div style='width:120px;height:30px;border:1px solid #000;"
+    f"background-color:rgb({color_seleccionado.rgb[0]},"
+    f"{color_seleccionado.rgb[1]},"
+    f"{color_seleccionado.rgb[2]});'></div>",
+    unsafe_allow_html=True
+)
 
 # --- Función para convertir PPTX → PDF ---
 def convert_to_pdf(input_pptx, output_dir):
@@ -153,36 +247,4 @@ if uploaded_template and uploaded_excel:
                     safe_name = "".join(
                         c for c in nombre
                         if c.isalnum() or c in (" ", "-", "_")
-                    ).rstrip().replace(" ", "_")
-
-                    output_pptx = os.path.join(
-                        output_dir,
-                        f"Certificado_{safe_name}.pptx"
-                    )
-
-                    prs.save(output_pptx)
-                    convert_to_pdf(output_pptx, output_dir)
-
-                    progress_bar.progress((i + 1) / total)
-
-                status_text.text("Procesamiento completado")
-
-                archivos = os.listdir(output_dir)
-                pdf_count = len([f for f in archivos if f.endswith(".pdf")])
-
-                st.success(f"Se generaron {pdf_count} certificados PDF.")
-
-                zip_path = os.path.join(tmpdir, "certificados.zip")
-                shutil.make_archive(
-                    zip_path.replace(".zip", ""),
-                    "zip",
-                    output_dir
-                )
-
-                with open(zip_path, "rb") as f:
-                    st.download_button(
-                        "Descargar Certificados PDF",
-                        f,
-                        "certificados.pdf.zip",
-                        "application/zip"
-                    )
+                    ).rs
