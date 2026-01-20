@@ -192,34 +192,21 @@ st.divider()
 # =========================
 st.subheader("Vista previa")
 
-preview_html = f"""
-<div style="
-    display:flex;
-    gap:40px;
-    align-items:flex-start;
-    margin-top:10px;
-">
-    <div style="
-        font-family:'{css_font(fuente_nombre)}', sans-serif;
-        font-size:{tamaño_nombre}px;
-        font-weight:bold;
-        font-style:italic;
-        color:rgb({r_nom},{g_nom},{b_nom});
-    ">
-        Nombre y Apellido
-    </div>
-"""
+preview_html = f"""<div style="display:flex; gap:40px; align-items:flex-start; margin-top:10px;">
+<div style="font-family:'{css_font(fuente_nombre)}', sans-serif;
+font-size:{tamaño_nombre}px;
+font-weight:bold;
+font-style:italic;
+color:rgb({r_nom},{g_nom},{b_nom});">
+Nombre y Apellido
+</div>"""
 
 if incluye_dni:
-    preview_html += f"""
-    <div style="
-        font-family:'{css_font(fuente_dni)}', sans-serif;
-        font-size:{tamaño_dni}px;
-        color:rgb({r_dni},{g_dni},{b_dni});
-    ">
-        DNI 12.345.678
-    </div>
-    """
+    preview_html += f"""<div style="font-family:'{css_font(fuente_dni)}', sans-serif;
+font-size:{tamaño_dni}px;
+color:rgb({r_dni},{g_dni},{b_dni});">
+DNI 12.345.678
+</div>"""
 
 preview_html += "</div>"
 
